@@ -2,8 +2,26 @@ import htm from "./htm.min.js";
 import { Component, h, render } from "./preact.min.js";
 const html = htm.bind(h);
 
+function DropdownList({ networks, onSelect }) {
+  return html`
+    <select onChange=${(e) => onSelect(e.target.value)}>
+      ${networks.map(
+        (option) => html`<option value=${option}>${option}</option>`
+      )}
+    </select>
+  `;
+}
+
 class App extends Component {
-  state = { connected: false, ssid: "", pass: "", spin: false, frames: [] };
+  state = {
+    connected: false,
+    ssid: "",
+    pass: "",
+    spin: false,
+    frames: [],
+    wifiNets: [],
+  };
+
   componentDidMount() {
     const logframe = (marker, frame) => {
       this.setState((state) => ({
@@ -12,12 +30,15 @@ class App extends Component {
       }));
     };
 
-    // Setup JSON-RPC engine
+    // Setup JSON-RPC engine and Wifi list
     var rpc = mkrpc("ws://" + location.host + "/rpc");
     rpc.onopen = (ev) => {
       // When RPC is connected, fetch list of supported RPC services
       this.setState({ connected: true });
       rpc.call("RPC.List").then((res) => console.log(res));
+      rpc.call("Wifi.Scan").then((res) => {
+        this.setState({ wifiNets: res.result.map((item) => item.ssid) });
+      });
     };
     rpc.onclose = (ev) => this.setState({ connected: false });
     rpc.onout = (ev) => logframe("-> ", ev);
@@ -25,8 +46,11 @@ class App extends Component {
     this.rpc = rpc;
   }
   render(props, state) {
-    const onssid = (ev) => this.setState({ ssid: ev.target.value });
+    const onssid = (ev) => this.setState({ ssid: ev });
     const onpass = (ev) => this.setState({ pass: ev.target.value });
+
+    //const wifiOptions = ["2Apple", "Banana", "Orange"];
+    //    const ssidlist = this.rpc.call("RPC.Scan").then((res) => console.log(res));
     const onclick = (ev) => {
       // Button press. Update device's configuration
       var sta = { enable: true, ssid: state.ssid, pass: state.pass };
@@ -47,7 +71,7 @@ class App extends Component {
       <div style="display: flex; flex-direction: column; margin: 2em 0;">
         <div style="display: flex; margin: 0.2em 0;">
           <label style="width: 33%;">WiFi network:</label>
-          <input type="text" onInput=${onssid} style="flex:1;" />
+          <${DropdownList} networks=${state.wifiNets} onSelect=${onssid} />
         </div>
         <div style="display: flex; margin: 0.2em 0;">
           <label style="width: 33%;">WiFi password:</label>
