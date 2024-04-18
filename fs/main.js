@@ -35,10 +35,10 @@ class App extends Component {
     rpc.onopen = (ev) => {
       // When RPC is connected, fetch list of supported RPC services
       this.setState({ connected: true });
-      rpc.call("RPC.List").then((res) => console.log(res));
-      rpc.call("Wifi.Scan").then((res) => {
+      rpc.call("Wifi.Scan","",10000).then((res) => {
         this.setState({ wifiNets: res.result.map((item) => item.ssid) });
       });
+      rpc.call("RPC.List").then((res) => console.log(res));
     };
     rpc.onclose = (ev) => this.setState({ connected: false });
     rpc.onout = (ev) => logframe("-> ", ev);
@@ -71,7 +71,7 @@ class App extends Component {
       <div style="display: flex; flex-direction: column; margin: 2em 0;">
         <div style="display: flex; margin: 0.2em 0;">
           <label style="width: 33%;">WiFi network:</label>
-          <${DropdownList} networks=${state.wifiNets} onSelect=${onssid} />
+          <${DropdownList} networks=${state.wifiNets} onSelect=${onssid} style="flex:1;" />
         </div>
         <div style="display: flex; margin: 0.2em 0;">
           <label style="width: 33%;">WiFi password:</label>
